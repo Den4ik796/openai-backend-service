@@ -1,9 +1,10 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 class MessageCreate(BaseModel):
     content: str
+    model: Optional[str] = None
 
 class MessageResponse(BaseModel):
     id: int
@@ -17,7 +18,7 @@ class MessageResponse(BaseModel):
         from_attributes = True
 
 class SessionResponse(BaseModel):
-    id: int
+    id: str
     created_at: datetime
     total_tokens: int
     total_cost: float

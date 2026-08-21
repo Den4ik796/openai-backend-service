@@ -9,7 +9,7 @@ Base = declarative_base()
 
 class ChatSession(Base):
     __tablename__ = "sessions"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(String, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     total_tokens = Column(Integer, default=0)
     total_cost = Column(Float, default=0.0)
@@ -18,7 +18,7 @@ class ChatSession(Base):
 class Message(Base):
     __tablename__ = "messages"
     id = Column(Integer, primary_key=True, index=True)
-    session_id = Column(Integer, ForeignKey("sessions.id"))
+    session_id = Column(String, ForeignKey("sessions.id"))
     role = Column(String)
     content = Column(String)
     prompt_tokens = Column(Integer, default=0)

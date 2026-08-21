@@ -5,17 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Assistant</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #343541; color: #ececf1; margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 260px; background-color: #202123; display: flex; flex-direction: column; padding: 10px; flex-shrink: 0; }
-        .new-chat-btn { background: transparent; border: 1px solid #4d4d4f; color: white; border-radius: 6px; padding: 12px; text-align: left; cursor: pointer; transition: 0.2s; display: flex; align-items: center; font-size: 14px; gap: 10px; }
-        .new-chat-btn:hover { background: #2A2B32; }
-        .session-list { flex: 1; overflow-y: auto; margin-top: 15px; display: flex; flex-direction: column; gap: 5px; }
-        .session-item { padding: 10px; border-radius: 6px; cursor: pointer; color: #ececf1; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
-        .session-item:hover { background: #2A2B32; }
-        .session-item.active { background: #343541; }
-        .chat-area { flex: 1; display: flex; flex-direction: column; background-color: #343541; position: relative; }
-        .header { padding: 15px 20px; text-align: center; border-bottom: 1px solid #4d4d4f; font-weight: 600; font-size: 1.1rem; }
-        .chat-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 20px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #343541; color: #ececf1; margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background-color: #202123; display: flex; flex-direction: column; border-right: 1px solid #4d4d4f; }
+        .sidebar-header { padding: 10px; }
+        .new-chat-btn { width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 0.9rem; transition: 0.2s; }
+        .new-chat-btn:hover { background: rgba(255,255,255,0.1); }
+        .sessions-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .session-item { padding: 10px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; color: #ececf1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .session-item:hover { background: rgba(255,255,255,0.05); }
+        .session-item.active { background: #343541; font-weight: bold; }
+
+        /* Main Chat Area */
+        .main-container { flex: 1; display: flex; flex-direction: column; height: 100vh; background-color: #343541; }
+        .header { padding: 12px 20px; border-bottom: 1px solid #4d4d4f; display: flex; justify-content: flex-end; align-items: center; background: #343541; gap: 10px; }
+        .model-select { background: #40414f; color: white; border: 1px solid #565869; padding: 6px 10px; border-radius: 6px; outline: none; }
+        .reset-btn { background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+        .reset-btn:hover { background: #c82333; }
+        
+        .chat-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
         .message-row { display: flex; justify-content: center; padding: 24px 20px; border-bottom: 1px solid rgba(0,0,0,0.1); }
         .message-row.assistant { background-color: #444654; }
         .message-content { max-width: 750px; width: 100%; display: flex; gap: 20px; line-height: 1.6; }
@@ -23,105 +32,137 @@
         .avatar.user { background-color: #5436da; }
         .avatar.assistant { background-color: #10a37f; }
         .text { flex: 1; white-space: pre-wrap; }
+        
         .input-container { padding: 20px; display: flex; justify-content: center; background-image: linear-gradient(180deg, rgba(53,55,64,0), #353740 58.85%); }
-        .input-box { max-width: 750px; width: 100%; display: flex; background: #40414f; border-radius: 12px; padding: 10px 15px; box-shadow: 0 0 15px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1); }
+        .input-box { max-width: 750px; width: 100%; display: flex; background: #40414f; border-radius: 12px; padding: 10px 15px; box-shadow: 0 0 15px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.1); gap: 10px; }
         input[type="text"] { flex: 1; background: transparent; border: none; color: white; font-size: 1rem; outline: none; padding: 5px; }
-        button.send-btn { background: #10a37f; color: white; border: none; border-radius: 6px; padding: 5px 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
-        button.send-btn:hover { background: #0b8c6c; }
-        button.send-btn:disabled { background: #555; cursor: not-allowed; }
+        button.send { background: #10a37f; color: white; border: none; border-radius: 6px; padding: 5px 15px; cursor: pointer; transition: 0.2s; }
+        button.send:hover { background: #0b8c6c; }
+        button:disabled { background: #555; cursor: not-allowed; }
         .typing { opacity: 0.5; font-style: italic; }
-        .empty-state { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; opacity: 0.5; }
+        .no-session { display: flex; flex: 1; align-items: center; justify-content: center; color: #8e8ea0; font-size: 1.2rem; }
     </style>
 </head>
 <body>
+
+    <!-- Sidebar -->
     <div class="sidebar">
-        <button class="new-chat-btn" onclick="startNewSession()">+ Новий чат</button>
-        <div class="session-list" id="sessionList"></div>
-    </div>
-    <div class="chat-area">
-        <div class="header" id="chatHeader">Оберіть або створіть чат</div>
-        <div class="chat-container" id="messages">
-            <div class="empty-state">
-                <h2>AI Assistant Backend</h2>
-                <p>Створіть нову сесію, щоб почати</p>
-            </div>
+        <div class="sidebar-header">
+            <button class="new-chat-btn" onclick="createNewSession()">+ Новий чат</button>
         </div>
-        <div class="input-container">
+        <div class="sessions-list" id="sessionsList"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="header">
+            <select id="modelSelect" class="model-select">
+                <option value="gpt-4o-mini">gpt-4o-mini</option>
+                <option value="gpt-4o">gpt-4o</option>
+                <option value="gpt-4">gpt-4</option>
+            </select>
+            <button class="reset-btn" onclick="resetSession()">Reset</button>
+        </div>
+
+        <div class="chat-container" id="messagesContainer">
+            <div class="no-session" id="noSessionText">Оберіть або створіть чат</div>
+        </div>
+
+        <div class="input-container" id="inputContainer" style="display: none;">
             <div class="input-box">
-                <input type="text" id="userInput" placeholder="Надіслати повідомлення..." autocomplete="off" disabled>
-                <button id="sendBtn" class="send-btn" onclick="sendMessage()" disabled>➤</button>
+                <input type="text" id="userInput" placeholder="Надіслати повідомлення..." autocomplete="off">
+                <button class="send" id="sendBtn" onclick="sendMessage()">➤</button>
             </div>
         </div>
     </div>
 
     <script>
         let currentSessionId = null;
-        const messagesDiv = document.getElementById('messages');
+        let sessionsCache = [];
+
+        const messagesContainer = document.getElementById('messagesContainer');
+        const sessionsList = document.getElementById('sessionsList');
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
-        const sessionList = document.getElementById('sessionList');
-        const chatHeader = document.getElementById('chatHeader');
+        const inputContainer = document.getElementById('inputContainer');
+        const noSessionText = document.getElementById('noSessionText');
+        const modelSelect = document.getElementById('modelSelect');
 
         async function loadSessions() {
             try {
                 const res = await fetch('/sessions');
-                const sessions = await res.json();
-                sessionList.innerHTML = '';
-                
-                sessions.reverse().forEach(s => {
-                    const item = document.createElement('div');
-                    item.className = `session-item ${s.id === currentSessionId ? 'active' : ''}`;
-                    item.innerText = `💬 Сесія #${s.id}`;
-                    item.onclick = () => loadSessionHistory(s.id);
-                    sessionList.appendChild(item);
-                });
+                sessionsCache = await res.json();
+                renderSessionsList();
             } catch (e) {
-                console.error('Failed to load sessions', e);
+                console.error("Помилка завантаження сесій", e);
             }
         }
 
-        async function startNewSession() {
+        function renderSessionsList() {
+            sessionsList.innerHTML = '';
+            sessionsCache.forEach((s, index) => {
+                const div = document.createElement('div');
+                div.className = `session-item ${s.id === currentSessionId ? 'active' : ''}`;
+                div.innerText = `Сесія #${index + 1}`;
+                div.onclick = () => selectSession(s.id);
+                sessionsList.appendChild(div);
+            });
+        }
+
+        async function createNewSession() {
             try {
                 const res = await fetch('/sessions', { method: 'POST' });
                 const data = await res.json();
-                await loadSessionHistory(data.id);
-                loadSessions();
+                await loadSessions();
+                selectSession(data.id);
             } catch (e) {
-                console.error('Failed to start new session', e);
+                alert("Помилка створення сесії");
             }
         }
 
-        async function loadSessionHistory(id) {
-            currentSessionId = id;
-            chatHeader.innerText = `Чат #${id}`;
-            userInput.disabled = false;
-            sendBtn.disabled = false;
-            messagesDiv.innerHTML = '';
+        async function selectSession(sessionId) {
+            currentSessionId = sessionId;
+            renderSessionsList();
+            inputContainer.style.display = 'flex';
             
             try {
-                const res = await fetch(`/sessions/${id}`);
+                const res = await fetch(`/sessions/${sessionId}`);
                 const data = await res.json();
+                messagesContainer.innerHTML = '';
                 
                 if (data.messages && data.messages.length > 0) {
                     data.messages.forEach(msg => {
-                        addMessage(msg.role, msg.content, false);
+                        appendMessageDOM(msg.role, msg.content);
                     });
                 } else {
-                    messagesDiv.innerHTML = '<div class="empty-state"><p>Це початок вашого спілкування.</p></div>';
+                    appendMessageDOM('assistant', 'Початок нової сесії. Напишіть перше повідомлення!');
                 }
-                loadSessions();
             } catch (e) {
-                console.error('Failed to load history', e);
+                messagesContainer.innerHTML = '<div class="no-session">Помилка завантаження історії</div>';
             }
         }
 
-        function addMessage(role, text, isTyping = false) {
-            const empty = document.querySelector('.empty-state');
-            if(empty) empty.remove();
+        async function resetSession() {
+            if (!currentSessionId) return;
+            try {
+                const res = await fetch(`/sessions/${currentSessionId}/reset`, { method: 'POST' });
+                if (res.ok) {
+                    messagesContainer.innerHTML = '';
+                    appendMessageDOM('assistant', 'Контекст сесії очищено. Починаємо з чистого аркуша!');
+                } else {
+                    alert("Помилка ресету");
+                }
+            } catch (e) {
+                alert("Помилка мережі");
+            }
+        }
+
+        function appendMessageDOM(role, text, isTyping = false) {
+            if (noSessionText) noSessionText.style.display = 'none';
 
             const row = document.createElement('div');
             row.className = `message-row ${role}`;
-            if(isTyping) row.id = 'typing-indicator';
+            row.id = isTyping ? 'typing-indicator' : '';
             
             const content = document.createElement('div');
             content.className = 'message-content';
@@ -137,39 +178,39 @@
             content.appendChild(avatar);
             content.appendChild(textDiv);
             row.appendChild(content);
-            messagesDiv.appendChild(row);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            messagesContainer.appendChild(row);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
         async function sendMessage() {
             const text = userInput.value.trim();
             if (!text || !currentSessionId) return;
 
-            addMessage("user", text);
+            const selectedModel = modelSelect.value;
+            appendMessageDOM("user", text);
             userInput.value = '';
             sendBtn.disabled = true;
-            addMessage("assistant", "Модель генерує відповідь...", true);
+            appendMessageDOM("assistant", "Модель генерує відповідь...", true);
 
             try {
                 const res = await fetch(`/sessions/${currentSessionId}/messages`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: text })
+                    body: JSON.stringify({ content: text, model: selectedModel })
                 });
                 const data = await res.json();
                 
-                const typing = document.getElementById('typing-indicator');
-                if(typing) typing.remove();
+                document.getElementById('typing-indicator').remove();
                 
                 if (res.ok) {
-                    addMessage("assistant", data.content);
+                    appendMessageDOM("assistant", data.content);
                 } else {
-                    addMessage("assistant", `Помилка API: ${JSON.stringify(data.detail)}`);
+                    let errMsg = data.detail ? JSON.stringify(data.detail) : "Невідома помилка";
+                    appendMessageDOM("assistant", `Помилка API: ${errMsg}`);
                 }
             } catch (e) {
-                const typing = document.getElementById('typing-indicator');
-                if(typing) typing.remove();
-                addMessage("assistant", "Помилка мережі.");
+                document.getElementById('typing-indicator').remove();
+                appendMessageDOM("assistant", "Помилка мережі.");
             } finally {
                 sendBtn.disabled = false;
                 userInput.focus();
@@ -180,7 +221,6 @@
             if (e.key === 'Enter') sendMessage();
         });
 
-        // Init
         loadSessions();
     </script>
 </body>

@@ -21,8 +21,8 @@ if not exist .env (
     echo.
 )
 
-echo [4/4] Starting FastAPI server...
-start http://127.0.0.1:8000
+echo [4/4] Starting FastAPI server and opening all 3 tabs...
+start http://127.0.0.1:8000/
 start http://127.0.0.1:8000/admin
 start http://127.0.0.1:8000/docs
 uvicorn main:app --reload --port 8000

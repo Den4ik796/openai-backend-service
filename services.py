@@ -10,10 +10,18 @@ def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> fl
         return 0.0
     return (prompt_tokens * rates["prompt_price_per_token"]) + (completion_tokens * rates["completion_price_per_token"])
 
-def process_chat_message(session_id: int, user_content: str, db: DBSession):
+def process_chat_message(session_id: str, user_content: str, requested_model: str, db: DBSession):
     if not settings.openai_api_key:
         raise HTTPException(status_code=500, detail="OpenAI API key is missing. Check your .env file.")
         
+    model_to_use = requested_model if requested_model else settings.model_name
+    
+    if model_to_use not in PRICING:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unsupported model '{model_to_use}'. Allowed models: {list(PRICING.keys())}"
+        )
+
     client = OpenAI(api_key=settings.openai_api_key)
     
     db_session = db.query(database.ChatSession).filter(database.ChatSession.id == session_id).first()
@@ -32,7 +40,7 @@ def process_chat_message(session_id: int, user_content: str, db: DBSession):
 
     try:
         response = client.chat.completions.create(
-            model=settings.model_name,
+            model=model_to_use,
             messages=messages_for_openai
         )
     except Exception as e:
@@ -43,7 +51,7 @@ def process_chat_message(session_id: int, user_content: str, db: DBSession):
 
     prompt_t = usage.prompt_tokens
     comp_t = usage.completion_tokens
-    cost = calculate_cost(settings.model_name, prompt_t, comp_t)
+    cost = calculate_cost(model_to_use, prompt_t, comp_t)
 
     assistant_msg = database.Message(
         session_id=session_id, 
